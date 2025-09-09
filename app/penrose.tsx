@@ -39,15 +39,15 @@ void main(){
   // Normalized coords centered at 0 with aspect correction
   vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
 
-  // Map scroll to quasi‑infinite zoom + slow rotation
-  float z = 1.0 + u_scroll * 0.0006;       // zoom factor driven by scroll
-  float ang = u_scroll * 0.0002;           // slight rotation as you scroll
-  uv = uv * z; // Apply zoom before kaleidoscope
+  // --- Scroll-based effects ---
+  // 1. Faster zoom
+  float z = 1.0 + u_scroll * 0.001;
+  uv = uv * z;
 
-  // Kaleidoscopic effect that rotates with scroll
+  // 2. Faster, more intense kaleidoscopic rotation
   const float K_PI = 3.14159265359;
-  float segments = 5.0; // 5-fold symmetry to match Penrose
-  float scroll_rot = u_scroll * 0.0005;
+  float segments = 5.0;
+  float scroll_rot = u_scroll * 0.001; // Increased rotation speed
   float angle = atan(uv.y, uv.x) + scroll_rot;
   float r = length(uv);
   float segment_angle = 2.0 * K_PI / segments;
@@ -56,7 +56,8 @@ void main(){
   uv.x = r * cos(angle);
   uv.y = r * sin(angle);
   
-  // Apply base rotation after kaleidoscope
+  // 3. Base rotation (slower)
+  float ang = u_scroll * 0.0002;
   uv = rot(ang) * uv;
 
   // Add slow drift so it never feels static
@@ -119,19 +120,25 @@ void main(){
   // Determine which of the two triangles within the rhombus we are in
   bool is_tri1 = min_f + max_f < 1.0;
 
-  // Assign one of four gray values based on rhombus and triangle type
+  // 4. More intense color shifting with scroll
+  float scroll_mix = sin(u_scroll * 0.0005) * 0.5 + 0.5; // Oscillates 0..1
+  
+  // Define a second color palette (warm)
+  vec3 color_b_thick_1 = vec3(0.4, 0.1, 0.1);
+  vec3 color_b_thick_2 = vec3(0.5, 0.2, 0.1);
+  vec3 color_b_thin_1 = vec3(0.6, 0.15, 0.1);
+  vec3 color_b_thin_2 = vec3(0.7, 0.25, 0.1);
+
   vec3 faceColor;
   if (is_thick) {
-      faceColor = is_tri1 ? u_color_thick_tri1 : u_color_thick_tri2;
+      vec3 color_a = is_tri1 ? u_color_thick_tri1 : u_color_thick_tri2;
+      vec3 color_b = is_tri1 ? color_b_thick_1 : color_b_thick_2;
+      faceColor = mix(color_a, color_b, scroll_mix);
   } else {
-      faceColor = is_tri1 ? u_color_thin_tri1 : u_color_thin_tri2;
+      vec3 color_a = is_tri1 ? u_color_thin_tri1 : u_color_thin_tri2;
+      vec3 color_b = is_tri1 ? color_b_thin_1 : color_b_thin_2;
+      faceColor = mix(color_a, color_b, scroll_mix);
   }
-
-  // Add a subtle, moody color shift using a sine wave over time
-  float mood = sin(u_time * 0.5) * 0.5 + 0.5; // Oscillates 0..1
-  vec3 mood_color_shift = vec3(0.05, 0.0, 0.1); // Shift towards purple/blue
-  faceColor = mix(faceColor, faceColor + mood_color_shift, mood);
-
 
   // Draw the rhombus edges with a soft glow to prevent strobing
   float dist_to_edge = min(min_f, 1.0 - max_f);
@@ -139,8 +146,8 @@ void main(){
   // Core line with a slightly softer edge
   float line_intensity = 1.0 - smoothstep(0.0, u_lineWidth * 0.15, dist_to_edge);
   
-  // Softer, wider glow effect that "breathes" with scroll
-  float breath = sin(u_scroll * 0.001) * 0.4 + 0.6; // Oscillates 0.2..1.0
+  // 5. More dramatic "breathing" glow effect
+  float breath = sin(u_scroll * 0.0015) * 0.5 + 0.5; // Oscillates 0..1
   float glow_intensity = 1.0 - smoothstep(0.0, u_lineWidth * (0.6 * breath + 0.3), dist_to_edge);
 
   // Final color using additive blending for a glowing effect
