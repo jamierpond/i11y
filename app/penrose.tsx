@@ -162,7 +162,7 @@ function FullscreenQuad(){
         u_time: { value: 0 },
         u_scroll: { value: 0 },
         u_lineWidth: { value: 0.06 }, // smaller → thinner lines
-        u_color_line: { value: new THREE.Color("#99aaff") },
+        u_color_line: { value: new THREE.Color("#7788cc") },
         u_color_thick_tri1: { value: new THREE.Color("#181848") },
         u_color_thick_tri2: { value: new THREE.Color("#242460") },
         u_color_thin_tri1: { value: new THREE.Color("#302478") },
