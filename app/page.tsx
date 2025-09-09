@@ -96,16 +96,6 @@ export default function Home() {
           </div>
         </section>
         <section className="min-h-screen flex items-center justify-center text-white p-4">
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 1.5 }}
-            className="text-xl md:text-3xl max-w-2xl text-center"
-          >
-            Discover the beauty of generative art.
-          </motion.p>
-        </section>
-        <section className="min-h-screen flex items-center justify-center text-white p-4">
           <ProjectCard
             title="THE EYE OF PROVIDENCE"
             description="Behold a dazzling LED tower that pierces the twilight with its vibrant, ever-shifting colors. This magnificent structure, a beacon of artistry and innovation, casts a radiant glow upon the desert landscape, its light a mesmerizing dance of technology and imagination."
@@ -120,16 +110,6 @@ export default function Home() {
             imageSrc="/thewall.webp"
             imageAlt="The Wall - Penrose Tile Installation"
           />
-        </section>
-        <section className="min-h-screen flex items-center justify-center text-white p-4">
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 1.5 }}
-            className="text-xl md:text-3xl max-w-2xl text-center"
-          >
-            An infinite canvas of color and light.
-          </motion.p>
         </section>
         <section className="min-h-screen flex items-center justify-center text-white p-4">
           <motion.a
