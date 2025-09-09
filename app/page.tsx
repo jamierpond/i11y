@@ -23,38 +23,39 @@ export default function Home() {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1 }}
-            className="text-6xl font-bold"
+            className="text-3xl md:text-5xl font-bold whitespace-nowrap"
           >
             ILLUMINAUGHTY
           </motion.h1>
         </section>
-        <section className="min-h-screen flex items-center justify-center text-white">
+        <section className="min-h-screen flex items-center justify-center text-white p-4">
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             transition={{ duration: 1.5 }}
-            className="text-4xl max-w-2xl text-center"
+            className="text-xl md:text-3xl max-w-2xl text-center"
           >
-            We're a Burning Man camp dedicated to creating immersive light installations and experiences that captivate and inspire.
+            Discover the beauty of generative art.
           </motion.p>
         </section>
-        <section className="min-h-screen flex items-center justify-center text-white">
+        <section className="min-h-screen flex items-center justify-center text-white p-4">
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             transition={{ duration: 1.5 }}
-            className="text-4xl max-w-2xl text-center"
+            className="text-xl md:text-3xl max-w-2xl text-center"
           >
+            An infinite canvas of color and light.
           </motion.p>
         </section>
-        <section className="min-h-screen flex items-center justify-center text-white">
+        <section className="min-h-screen flex items-center justify-center text-white p-4">
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             transition={{ duration: 1.5 }}
-            className="text-4xl max-w-2xl text-center"
+            className="text-xl md:text-3xl max-w-2xl text-center"
           >
-            JOIN US
+            Created with code.
           </motion.p>
         </section>
       </div>
