@@ -66,20 +66,34 @@ export default function Home() {
           >
             ILLUMINAUGHTY
           </motion.h1>
-          <motion.a
-            href="/camp-with-us"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.5 }}
-            className={`text-lg md:text-2xl font-bold px-8 py-4 bg-transparent border-2 border-purple-500 rounded-lg hover:bg-purple-500 hover:bg-opacity-20 transition-all cursor-pointer inline-block ${microgramma.className}`}
-            style={{
-              textShadow: '0 0 20px rgba(147,51,234,0.8), 0 0 40px rgba(147,51,234,0.6), 0 0 80px rgba(147,51,234,0.4)',
-              filter: 'drop-shadow(0 0 15px rgba(147,51,234,0.9))',
-              boxShadow: '0 0 20px rgba(147,51,234,0.5), 0 0 40px rgba(147,51,234,0.3), inset 0 0 20px rgba(147,51,234,0.1)'
-            }}
-          >
-            JOIN US
-          </motion.a>
+          <div className="flex flex-col sm:flex-row gap-4 w-full max-w-lg">
+            <motion.a
+              href="/camp-with-us"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.5 }}
+              className={`flex-1 text-center text-sm md:text-lg font-bold px-6 py-3 bg-transparent border-2 border-purple-500 rounded-lg hover:bg-purple-500 hover:bg-opacity-20 transition-all cursor-pointer inline-block ${microgramma.className}`}
+              style={{
+                textShadow: '0 0 20px rgba(147,51,234,0.8), 0 0 40px rgba(147,51,234,0.6), 0 0 80px rgba(147,51,234,0.4)',
+                filter: 'drop-shadow(0 0 15px rgba(147,51,234,0.9))',
+                boxShadow: '0 0 20px rgba(147,51,234,0.5), 0 0 40px rgba(147,51,234,0.3), inset 0 0 20px rgba(147,51,234,0.1)'
+              }}
+            >
+              JOIN US
+            </motion.a>
+            <motion.button
+              onClick={() => {
+                const nextSection = document.querySelector('section:nth-of-type(2)');
+                nextSection?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.7 }}
+              className={`flex-1 text-center text-sm md:text-lg font-bold px-6 py-3 bg-transparent border-2 border-white rounded-lg hover:bg-white hover:text-black transition-all cursor-pointer ${microgramma.className}`}
+            >
+              LEARN MORE
+            </motion.button>
+          </div>
         </section>
         <section className="min-h-screen flex items-center justify-center text-white p-4">
           <motion.p
