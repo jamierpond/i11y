@@ -127,14 +127,21 @@ void main(){
       faceColor = is_tri1 ? u_color_thin_tri1 : u_color_thin_tri2;
   }
 
+  // Add a subtle, moody color shift using a sine wave over time
+  float mood = sin(u_time * 0.5) * 0.5 + 0.5; // Oscillates 0..1
+  vec3 mood_color_shift = vec3(0.05, 0.0, 0.1); // Shift towards purple/blue
+  faceColor = mix(faceColor, faceColor + mood_color_shift, mood);
+
+
   // Draw the rhombus edges with a soft glow to prevent strobing
   float dist_to_edge = min(min_f, 1.0 - max_f);
   
   // Core line with a slightly softer edge
   float line_intensity = 1.0 - smoothstep(0.0, u_lineWidth * 0.15, dist_to_edge);
   
-  // Softer, wider glow effect
-  float glow_intensity = 1.0 - smoothstep(0.0, u_lineWidth * 0.6, dist_to_edge);
+  // Softer, wider glow effect that "breathes" with scroll
+  float breath = sin(u_scroll * 0.001) * 0.4 + 0.6; // Oscillates 0.2..1.0
+  float glow_intensity = 1.0 - smoothstep(0.0, u_lineWidth * (0.6 * breath + 0.3), dist_to_edge);
 
   // Final color using additive blending for a glowing effect
   vec3 col = faceColor + u_color_line * line_intensity + u_color_line * glow_intensity * 0.3;
