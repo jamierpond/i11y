@@ -181,7 +181,6 @@ void main(){
 
 function FullscreenQuad(){
   const { size, gl } = useThree();
-  const matRef = useRef();
   const scrollY = useRef(0);
 
   // Track scroll once globally

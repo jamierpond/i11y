@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import localFont from "next/font/local";
+import Image from "next/image";
 
 const microgramma = localFont({
   src: [
@@ -26,9 +27,11 @@ export function ProjectCard({ title, description, imageSrc, imageAlt }: ProjectC
       transition={{ duration: 1, ease: "easeOut" }}
       className="bg-black bg-opacity-50 backdrop-blur-sm rounded-xl overflow-hidden shadow-2xl shadow-purple-500/20 border border-white/10 max-w-4xl w-full"
     >
-      <img
+      <Image
         src={imageSrc}
         alt={imageAlt}
+        width={800}
+        height={450}
         className="w-full h-auto object-cover"
       />
       <div className="p-6 md:p-8">
