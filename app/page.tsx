@@ -3,7 +3,7 @@ import { PenroseScroll } from "./penrose";
 import { motion } from "framer-motion";
 import localFont from "next/font/local"
 
-const poppins = localFont({
+const microgramma = localFont({
   src: [
     {
       path: './fonts/microgramma-d-extended-bold.otf',
@@ -11,13 +11,13 @@ const poppins = localFont({
     },
   ],
   variable: '--font-poppins'
-})
+});
 
 export default function Home() {
   return (
     <div className="font-sans bg-transparent">
       <PenroseScroll />
-      <div className="relative z-10">
+      <div className={`relative z-10 ${microgramma.className}`}>
         <section className="min-h-screen flex items-center justify-center text-white">
           <motion.h1
             initial={{ opacity: 0, y: 50 }}
@@ -25,7 +25,7 @@ export default function Home() {
             transition={{ duration: 1 }}
             className="text-6xl font-bold"
           >
-            Scroll Down
+            ILLUMINAUGHTY
           </motion.h1>
         </section>
         <section className="min-h-screen flex items-center justify-center text-white">
@@ -35,7 +35,7 @@ export default function Home() {
             transition={{ duration: 1.5 }}
             className="text-4xl max-w-2xl text-center"
           >
-            Discover the beauty of generative art.
+            We're a Burning Man camp dedicated to creating immersive light installations and experiences that captivate and inspire.
           </motion.p>
         </section>
         <section className="min-h-screen flex items-center justify-center text-white">
@@ -45,7 +45,6 @@ export default function Home() {
             transition={{ duration: 1.5 }}
             className="text-4xl max-w-2xl text-center"
           >
-            An infinite canvas of color and light.
           </motion.p>
         </section>
         <section className="min-h-screen flex items-center justify-center text-white">
@@ -55,7 +54,7 @@ export default function Home() {
             transition={{ duration: 1.5 }}
             className="text-4xl max-w-2xl text-center"
           >
-            Created with code.
+            JOIN US
           </motion.p>
         </section>
       </div>
