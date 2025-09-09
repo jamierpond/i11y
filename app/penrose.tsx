@@ -40,30 +40,81 @@ void main(){
   // Add slow drift so it never feels static
   uv += 0.03 * vec2(sin(u_time*0.25), cos(u_time*0.2));
 
-  // Penrose tiling via de Bruijn grid method
-  float k = 10.0; // density of the tiling
+  // --- Penrose Tiling using a dual-grid (de Bruijn) method ---
+  float k = 12.0; // Tiling density
+  vec2 p = uv * k;
+
+  // Five basis vectors
+  const float PI = 3.14159265359;
+  vec2 e[5];
+  e[0] = vec2(cos(0.0 * 2.0 * PI / 5.0), sin(0.0 * 2.0 * PI / 5.0));
+  e[1] = vec2(cos(1.0 * 2.0 * PI / 5.0), sin(1.0 * 2.0 * PI / 5.0));
+  e[2] = vec2(cos(2.0 * 2.0 * PI / 5.0), sin(2.0 * 2.0 * PI / 5.0));
+  e[3] = vec2(cos(3.0 * 2.0 * PI / 5.0), sin(3.0 * 2.0 * PI / 5.0));
+  e[4] = vec2(cos(4.0 * 2.0 * PI / 5.0), sin(4.0 * 2.0 * PI / 5.0));
+
+  // For each of the 5 grids, calculate the projection of our point p.
+  float V[5];
+  for(int i=0; i<5; i++){
+    V[i] = dot(p, e[i]);
+  }
   
-  float min_dist = 1.0;
-  for (int i = 0; i < 5; i++) {
-    float angle = float(i) * 2.0 * 3.14159265359 / 5.0; // 72 degrees
-    vec2 dir = vec2(cos(angle), sin(angle));
-    // Project p onto dir, take fractional part, find distance to center of band (0.5)
-    float dist = abs(fract(dot(uv * k, dir)) - 0.5);
-    min_dist = min(min_dist, dist);
+  // Get the integer part (the index of the strip) and the fractional part.
+  float I[5];
+  float F[5];
+  for(int i=0; i<5; i++){
+    I[i] = floor(V[i]);
+    F[i] = fract(V[i]);
   }
 
-  // min_dist is the distance to the nearest line in the 5 grids.
-  // This creates the characteristic rhombus shapes.
-  // We can draw the lines by checking if min_dist is small.
-  float lines = 1.0 - smoothstep(0.0, u_lineWidth, min_dist);
+  // Find the two strips that are closest to being crossed.
+  float min_f = 1.0;
+  int min_i = 0;
+  float max_f = 0.0;
+  int max_i = 0;
 
-  // Optional edge glow for crispness
-  float glow = smoothstep(0.0, 1.0, lines) * 0.8;
+  // Unrolled loop for GLSL 1.0 compatibility
+  if(F[0] < min_f){ min_f = F[0]; min_i = 0; }
+  if(F[1] < min_f){ min_f = F[1]; min_i = 1; }
+  if(F[2] < min_f){ min_f = F[2]; min_i = 2; }
+  if(F[3] < min_f){ min_f = F[3]; min_i = 3; }
+  if(F[4] < min_f){ min_f = F[4]; min_i = 4; }
 
-  // Final color: slate background with light lines
-  vec3 bg = vec3(0.06, 0.07, 0.1);
-  vec3 fg = vec3(0.95, 0.97, 1.0);
-  vec3 col = mix(bg, fg, lines) + glow * 0.05;
+  if(F[0] > max_f){ max_f = F[0]; max_i = 0; }
+  if(F[1] > max_f){ max_f = F[1]; max_i = 1; }
+  if(F[2] > max_f){ max_f = F[2]; max_i = 2; }
+  if(F[3] > max_f){ max_f = F[3]; max_i = 3; }
+  if(F[4] > max_f){ max_f = F[4]; max_i = 4; }
+
+  // Get the integer parts of the strips without using variable array indices
+  float I_min = 0.0;
+  if (min_i == 0) I_min = I[0];
+  else if (min_i == 1) I_min = I[1];
+  else if (min_i == 2) I_min = I[2];
+  else if (min_i == 3) I_min = I[3];
+  else if (min_i == 4) I_min = I[4];
+
+  float I_max = 0.0;
+  if (max_i == 0) I_max = I[0];
+  else if (max_i == 1) I_max = I[1];
+  else if (max_i == 2) I_max = I[2];
+  else if (max_i == 3) I_max = I[3];
+  else if (max_i == 4) I_max = I[4];
+
+  // The rhombus type (thick or thin) depends on the sum of the integer indices
+  int s = int(I_min) + int(I_max);
+  
+  // Color based on rhombus type.
+  float gray = (s % 2 == 0) ? 0.95 : 0.75;
+  
+  // To draw the edges, we find the distance to the closest edge of the rhombus.
+  float dist_to_edge = min(min_f, 1.0 - max_f);
+  float lines = 1.0 - smoothstep(0.0, u_lineWidth * 0.15, dist_to_edge);
+
+  // Final color: mix the face color with a line color
+  vec3 faceColor = vec3(gray) * 0.8; // Make faces a bit darker
+  vec3 lineColor = vec3(1.0);
+  vec3 col = mix(faceColor, lineColor, lines);
 
   gl_FragColor = vec4(col, 1.0);
 }
