@@ -1,7 +1,8 @@
 "use client";
 import { PenroseScroll } from "./penrose";
 import { motion } from "framer-motion";
-import localFont from "next/font/local"
+import localFont from "next/font/local";
+import { ProjectCard } from "./components/ProjectCard";
 
 const microgramma = localFont({
   src: [
@@ -39,24 +40,12 @@ export default function Home() {
           </motion.p>
         </section>
         <section className="min-h-screen flex items-center justify-center text-white p-4">
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: "easeOut" }}
-            className="bg-black bg-opacity-50 backdrop-blur-sm rounded-xl overflow-hidden shadow-2xl shadow-purple-500/20 border border-white/10 max-w-4xl w-full"
-          >
-            <img
-              src="/frontage.webp"
-              alt="The Eye of Providence"
-              className="w-full h-auto object-cover"
-            />
-            <div className="p-6 md:p-8">
-              <h2 className={`text-2xl md:text-4xl font-bold mb-4 ${microgramma.className}`}>The Eye of Providence</h2>
-              <p className="text-base md:text-lg text-white/80">
-                Behold a dazzling LED tower that pierces the twilight with its vibrant, ever-shifting colors. This magnificent structure, a beacon of artistry and innovation, casts a radiant glow upon the desert landscape, its light a mesmerizing dance of technology and imagination.
-              </p>
-            </div>
-          </motion.div>
+          <ProjectCard
+            title="The Eye of Providence"
+            description="Behold a dazzling LED tower that pierces the twilight with its vibrant, ever-shifting colors. This magnificent structure, a beacon of artistry and innovation, casts a radiant glow upon the desert landscape, its light a mesmerizing dance of technology and imagination."
+            imageSrc="/frontage.webp"
+            imageAlt="The Eye of Providence"
+          />
         </section>
         <section className="min-h-screen flex items-center justify-center text-white p-4">
           <motion.p
