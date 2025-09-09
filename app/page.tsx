@@ -1,6 +1,17 @@
 "use client";
 import { PenroseScroll } from "./penrose";
 import { motion } from "framer-motion";
+import localFont from '@next/font/local'
+
+const poppins = localFont({
+  src: [
+    {
+      path: './fonts/microgramma-d-extended-bold.otf',
+      weight: '400'
+    },
+  ],
+  variable: '--font-poppins'
+})
 
 export default function Home() {
   return (
