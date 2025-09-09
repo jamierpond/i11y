@@ -22,6 +22,13 @@ uniform float u_time;          // seconds
 uniform float u_scroll;        // mapped scroll (pixels)
 uniform float u_lineWidth;     // thin lines threshold
 
+// Colors
+uniform vec3 u_color_line;
+uniform vec3 u_color_thick_tri1;
+uniform vec3 u_color_thick_tri2;
+uniform vec3 u_color_thin_tri1;
+uniform vec3 u_color_thin_tri2;
+
 // rotate a 2D vector by angle a
 mat2 rot(float a){
   float c = cos(a), s = sin(a);
@@ -98,21 +105,24 @@ void main(){
   bool is_tri1 = min_f + max_f < 1.0;
 
   // Assign one of four gray values based on rhombus and triangle type
-  float gray;
+  vec3 faceColor;
   if (is_thick) {
-      gray = is_tri1 ? 0.95 : 0.85;
+      faceColor = is_tri1 ? u_color_thick_tri1 : u_color_thick_tri2;
   } else {
-      gray = is_tri1 ? 0.75 : 0.65;
+      faceColor = is_tri1 ? u_color_thin_tri1 : u_color_thin_tri2;
   }
 
-  // Draw the rhombus edges
+  // Draw the rhombus edges with a soft glow to prevent strobing
   float dist_to_edge = min(min_f, 1.0 - max_f);
-  float lines = 1.0 - smoothstep(0.0, u_lineWidth * 0.1, dist_to_edge);
+  
+  // Core line with a slightly softer edge
+  float line_intensity = 1.0 - smoothstep(0.0, u_lineWidth * 0.15, dist_to_edge);
+  
+  // Softer, wider glow effect
+  float glow_intensity = 1.0 - smoothstep(0.0, u_lineWidth * 0.6, dist_to_edge);
 
-  // Final color
-  vec3 faceColor = vec3(gray);
-  vec3 lineColor = vec3(1.0);
-  vec3 col = mix(faceColor, lineColor, lines);
+  // Final color using additive blending for a glowing effect
+  vec3 col = faceColor + u_color_line * line_intensity + u_color_line * glow_intensity * 0.3;
 
   gl_FragColor = vec4(col, 1.0);
 }
@@ -152,6 +162,11 @@ function FullscreenQuad(){
         u_time: { value: 0 },
         u_scroll: { value: 0 },
         u_lineWidth: { value: 0.06 }, // smaller → thinner lines
+        u_color_line: { value: new THREE.Color("#6688cc") },
+        u_color_thick_tri1: { value: new THREE.Color("#080818") },
+        u_color_thick_tri2: { value: new THREE.Color("#040410") },
+        u_color_thin_tri1: { value: new THREE.Color("#020208") },
+        u_color_thin_tri2: { value: new THREE.Color("#000000") },
       },
       // Disable depth & write for a clean full‑screen pass
       depthTest: false,
