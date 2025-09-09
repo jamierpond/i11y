@@ -53,10 +53,13 @@ void main(){
   e[3] = vec2(cos(3.0 * 2.0 * PI / 5.0), sin(3.0 * 2.0 * PI / 5.0));
   e[4] = vec2(cos(4.0 * 2.0 * PI / 5.0), sin(4.0 * 2.0 * PI / 5.0));
 
+  // Add a phase shift (gamma) to center the pattern and create global symmetry
+  float gamma = 0.5;
+
   // For each of the 5 grids, calculate the projection of our point p.
   float V[5];
   for(int i=0; i<5; i++){
-    V[i] = dot(p, e[i]);
+    V[i] = dot(p, e[i]) + gamma;
   }
   
   // Get the integer part (the index of the strip) and the fractional part.
@@ -86,33 +89,28 @@ void main(){
   if(F[3] > max_f){ max_f = F[3]; max_i = 3; }
   if(F[4] > max_f){ max_f = F[4]; max_i = 4; }
 
-  // Get the integer parts of the strips without using variable array indices
-  float I_min = 0.0;
-  if (min_i == 0) I_min = I[0];
-  else if (min_i == 1) I_min = I[1];
-  else if (min_i == 2) I_min = I[2];
-  else if (min_i == 3) I_min = I[3];
-  else if (min_i == 4) I_min = I[4];
+  // Determine rhombus type (thick/thin)
+  int d_i = abs(min_i - max_i);
+  if (d_i > 2) d_i = 5 - d_i; // handle wrap-around
+  bool is_thick = (d_i == 1);
 
-  float I_max = 0.0;
-  if (max_i == 0) I_max = I[0];
-  else if (max_i == 1) I_max = I[1];
-  else if (max_i == 2) I_max = I[2];
-  else if (max_i == 3) I_max = I[3];
-  else if (max_i == 4) I_max = I[4];
+  // Determine which of the two triangles within the rhombus we are in
+  bool is_tri1 = min_f + max_f < 1.0;
 
-  // The rhombus type (thick or thin) depends on the sum of the integer indices
-  int s = int(I_min) + int(I_max);
-  
-  // Color based on rhombus type.
-  float gray = (s % 2 == 0) ? 0.95 : 0.75;
-  
-  // To draw the edges, we find the distance to the closest edge of the rhombus.
+  // Assign one of four gray values based on rhombus and triangle type
+  float gray;
+  if (is_thick) {
+      gray = is_tri1 ? 0.95 : 0.85;
+  } else {
+      gray = is_tri1 ? 0.75 : 0.65;
+  }
+
+  // Draw the rhombus edges
   float dist_to_edge = min(min_f, 1.0 - max_f);
-  float lines = 1.0 - smoothstep(0.0, u_lineWidth * 0.15, dist_to_edge);
+  float lines = 1.0 - smoothstep(0.0, u_lineWidth * 0.1, dist_to_edge);
 
-  // Final color: mix the face color with a line color
-  vec3 faceColor = vec3(gray) * 0.8; // Make faces a bit darker
+  // Final color
+  vec3 faceColor = vec3(gray);
   vec3 lineColor = vec3(1.0);
   vec3 col = mix(faceColor, lineColor, lines);
 
