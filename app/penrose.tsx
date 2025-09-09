@@ -40,21 +40,22 @@ void main(){
   // Add slow drift so it never feels static
   uv += 0.03 * vec2(sin(u_time*0.25), cos(u_time*0.2));
 
-  // Build 10‑fold quasicrystal via 5 directions (the negatives come for free in cosine)
-  float sumWaves = 0.0;
-  float k = 24.0;            // spatial frequency; higher → denser lines
-  // Five directions spaced by 36° (PI/5)
-  for(int i=0; i<5; i++){
-    float a = float(i) * 3.14159265359 / 5.0; // 0, 36°, 72°, ...
-    vec2 dir = vec2(cos(a), sin(a));
-    sumWaves += cos(dot(uv, dir) * k);
+  // Penrose tiling via de Bruijn grid method
+  float k = 10.0; // density of the tiling
+  
+  float min_dist = 1.0;
+  for (int i = 0; i < 5; i++) {
+    float angle = float(i) * 2.0 * 3.14159265359 / 5.0; // 72 degrees
+    vec2 dir = vec2(cos(angle), sin(angle));
+    // Project p onto dir, take fractional part, find distance to center of band (0.5)
+    float dist = abs(fract(dot(uv * k, dir)) - 0.5);
+    min_dist = min(min_dist, dist);
   }
-  // Normalize to 0..1
-  float q = 0.5 + 0.5 * (sumWaves / 5.0);
 
-  // Enhance linework: keep only the thin ridges of the interference pattern
-  // u_lineWidth controls how thin the lines are. We also bias with a gentle curve for contrast.
-  float lines = smoothstep(0.5 - u_lineWidth, 0.5, q) - smoothstep(0.5, 0.5 + u_lineWidth, q);
+  // min_dist is the distance to the nearest line in the 5 grids.
+  // This creates the characteristic rhombus shapes.
+  // We can draw the lines by checking if min_dist is small.
+  float lines = 1.0 - smoothstep(0.0, u_lineWidth, min_dist);
 
   // Optional edge glow for crispness
   float glow = smoothstep(0.0, 1.0, lines) * 0.8;
