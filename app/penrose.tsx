@@ -42,7 +42,22 @@ void main(){
   // Map scroll to quasi‑infinite zoom + slow rotation
   float z = 1.0 + u_scroll * 0.0006;       // zoom factor driven by scroll
   float ang = u_scroll * 0.0002;           // slight rotation as you scroll
-  uv = rot(ang) * (uv * z);
+  uv = uv * z; // Apply zoom before kaleidoscope
+
+  // Kaleidoscopic effect that rotates with scroll
+  const float K_PI = 3.14159265359;
+  float segments = 5.0; // 5-fold symmetry to match Penrose
+  float scroll_rot = u_scroll * 0.0005;
+  float angle = atan(uv.y, uv.x) + scroll_rot;
+  float r = length(uv);
+  float segment_angle = 2.0 * K_PI / segments;
+  angle = mod(angle, segment_angle);
+  angle = abs(angle - segment_angle / 2.0);
+  uv.x = r * cos(angle);
+  uv.y = r * sin(angle);
+  
+  // Apply base rotation after kaleidoscope
+  uv = rot(ang) * uv;
 
   // Add slow drift so it never feels static
   uv += 0.03 * vec2(sin(u_time*0.25), cos(u_time*0.2));
