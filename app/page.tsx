@@ -104,14 +104,15 @@ export default function Home() {
           </motion.p>
         </section>
         <section className="min-h-screen flex items-center justify-center text-white p-4">
-          <motion.p
+          <motion.a
+            href="/camp-with-us"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             transition={{ duration: 1.5 }}
-            className="text-xl md:text-3xl max-w-2xl text-center"
+            className={`text-xl md:text-3xl max-w-2xl text-center bg-gray-600 hover:bg-gray-700 px-8 py-4 rounded-lg font-bold transition-colors cursor-pointer inline-block ${microgramma.className}`}
           >
-            Created with code.
-          </motion.p>
+            JOIN US
+          </motion.a>
         </section>
       </div>
     </div>

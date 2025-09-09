@@ -57,8 +57,14 @@ void main(){
   vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
 
   // --- Scroll-based effects ---
-  // 1. Faster zoom
-  float z = 1.0 + u_scroll * 0.001;
+  // 1. Oscillating zoom that doesn't get too far away
+  // It oscillates twice over a scroll distance of about 5000px.
+  // The maximum additional zoom is capped to prevent tiles from becoming too small.
+  float scroll_norm = u_scroll / 5000.0; // Normalize scroll for easier frequency control
+  float freq = 2.0; // 2 cycles over the normalized distance
+  float max_zoom_factor = tanh(scroll_norm * 2.0) * 2.5; // Limits max additional zoom to ~2.5
+  float oscillation = (sin(scroll_norm * freq * 2.0 * 3.14159) + 1.0) / 2.0; // range [0, 1]
+  float z = 1.0 + max_zoom_factor * oscillation;
   uv = uv * z;
 
   // 2. Faster, more intense kaleidoscopic rotation
