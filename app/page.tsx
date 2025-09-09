@@ -86,6 +86,14 @@ export default function Home() {
           />
         </section>
         <section className="min-h-screen flex items-center justify-center text-white p-4">
+          <ProjectCard
+            title="THE WALL"
+            description="An enormous tessellation of vibrant Penrose tiles creates an impossibly infinite pattern that defies the eye. Each geometric facet catches and refracts light in brilliant hues of magenta, cyan, and gold, forming a mesmerizing wall of mathematical beauty that stretches beyond comprehension."
+            imageSrc="/thewall.webp"
+            imageAlt="The Wall - Penrose Tile Installation"
+          />
+        </section>
+        <section className="min-h-screen flex items-center justify-center text-white p-4">
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
