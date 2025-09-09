@@ -53,7 +53,7 @@ export default function Home() {
       </nav>
       <PenroseScroll />
       <div className="relative z-10">
-        <section className="min-h-screen flex items-center justify-center text-white">
+        <section className="min-h-screen flex flex-col items-center justify-center text-white space-y-12">
           <motion.h1
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -66,6 +66,20 @@ export default function Home() {
           >
             ILLUMINAUGHTY
           </motion.h1>
+          <motion.a
+            href="/camp-with-us"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.5 }}
+            className={`text-lg md:text-2xl font-bold px-8 py-4 bg-transparent border-2 border-purple-500 rounded-lg hover:bg-purple-500 hover:bg-opacity-20 transition-all cursor-pointer inline-block ${microgramma.className}`}
+            style={{
+              textShadow: '0 0 20px rgba(147,51,234,0.8), 0 0 40px rgba(147,51,234,0.6), 0 0 80px rgba(147,51,234,0.4)',
+              filter: 'drop-shadow(0 0 15px rgba(147,51,234,0.9))',
+              boxShadow: '0 0 20px rgba(147,51,234,0.5), 0 0 40px rgba(147,51,234,0.3), inset 0 0 20px rgba(147,51,234,0.1)'
+            }}
+          >
+            JOIN US
+          </motion.a>
         </section>
         <section className="min-h-screen flex items-center justify-center text-white p-4">
           <motion.p
@@ -109,7 +123,7 @@ export default function Home() {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             transition={{ duration: 1.5 }}
-            className={`text-xl md:text-3xl max-w-2xl text-center bg-gray-600 hover:bg-gray-700 px-8 py-4 rounded-lg font-bold transition-colors cursor-pointer inline-block ${microgramma.className}`}
+            className={`text-xl md:text-3xl max-w-2xl text-center bg-black hover:bg-gray-900 px-8 py-4 rounded-lg font-bold transition-colors cursor-pointer inline-block ${microgramma.className}`}
           >
             JOIN US
           </motion.a>
