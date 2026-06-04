@@ -95,6 +95,7 @@ function buildGeometry(): Geometry {
     const order = [0, 1, 2].sort((x, y) => len[x] - len[y]);
     // The two equal sides are the rhombus edges; the odd one is the diagonal.
     const legs = t === 0 ? [order[1], order[2]] : [order[0], order[1]];
+    const baseIdx = t === 0 ? order[0] : order[2]; // the diagonal we share with our twin
 
     // Orientation class from the average leg direction (folded to a half-circle
     // so both triangles of a rhombus agree).
@@ -110,8 +111,12 @@ function buildGeometry(): Geometry {
     if (ang < 0) ang += Math.PI;
     const orient = Math.round((ang / Math.PI) * 10) % 10;
 
-    const cx = (a[0] + b[0] + c[0]) / 3;
-    const cy = (a[1] + b[1] + c[1]) / 3;
+    // Colour anchor = the rhombus centre, i.e. the midpoint of the shared
+    // diagonal. Both triangles of a rhombus share this point, so they take the
+    // same colour and the rhombus reads as ONE tile (not split along the diagonal).
+    const [bp, bq] = tri[baseIdx];
+    const cx = (bp[0] + bq[0]) / 2;
+    const cy = (bp[1] + bq[1]) / 2;
 
     const vi = i * 6;
     pos[vi] = a[0]; pos[vi + 1] = a[1];
@@ -144,114 +149,97 @@ function buildGeometry(): Geometry {
 
 /* -------------------------------------------------------------------- shaders */
 
-const BPM = 124.0;
-
 const VERT = `#version 300 es
 precision highp float;
 in vec2 aPos;
 in float aType;
-in float aClass;
 in vec2 aCentroid;
 uniform float uTime;
 uniform float uScroll;
 uniform float uAspect;
 uniform float uMotion;
 out float vType;
-out float vClass;
-out vec2 vCentroid;
+out vec2 vCenter;   // tile centroid in screen space (constant per tile -> flat)
+out vec2 vScreen;
 
 mat2 rot(float a){ float c = cos(a), s = sin(a); return mat2(c, -s, s, c); }
 
-const float BPM = ${BPM.toFixed(1)};
-
 void main(){
-  // Beat clock: a kick on every beat that punches the zoom.
-  float bt = uTime * (BPM / 60.0);
-  float phase = fract(bt);
-  float accent = (mod(floor(bt), 4.0) < 0.5) ? 1.0 : 0.7; // downbeat hits harder
-  float kick = exp(-phase * 9.0) * accent;
-
-  // Scroll (and a slow ambient drift) rotate the whole tiling; scroll also
-  // gently zooms in. We only ever zoom *in*, so the unit patch always covers
-  // the viewport — no exposed edges, no missing tiles. uMotion gates all of
-  // this for prefers-reduced-motion.
-  float ang  = (uScroll * 0.00022 + uTime * 0.012) * uMotion;
-  float zoom = 1.0 + uMotion * 0.16 * (0.5 + 0.5 * sin(uScroll * 0.0006 + uTime * 0.05));
-  zoom *= 1.0 + uMotion * 0.025 * kick; // pump on the beat
-  // Cover any aspect: map the unit patch so its inscribed radius spans the
-  // viewport diagonal (0.9 leaves a small safety margin for rotation).
+  // Slow ambient drift + scroll gently rotate / zoom the tiling. We only ever
+  // zoom *in*, so the unit patch always covers the viewport (no exposed edges).
+  // uMotion gates all of this for prefers-reduced-motion.
+  float ang  = (uScroll * 0.00016 + uTime * 0.006) * uMotion;
+  float zoom = 1.0 + uMotion * 0.06 * (0.5 + 0.5 * sin(uScroll * 0.0005 + uTime * 0.03));
   float cover = sqrt(uAspect * uAspect + 1.0) / 0.9;
   float scale = cover * zoom;
 
-  vec2 p = rot(ang) * aPos;
+  mat2 R = rot(ang);
+  vec2 p  = R * aPos;
+  vec2 cp = R * aCentroid;                       // same transform as position
   gl_Position = vec4(vec2(p.x / uAspect, p.y) * scale, 0.0, 1.0);
+  vScreen = gl_Position.xy;
+  vCenter = vec2(cp.x / uAspect, cp.y) * scale;  // flat across the triangle
 
   vType = aType;
-  vClass = aClass;
-  vCentroid = aCentroid;
 }`;
 
 const FRAG = `#version 300 es
 precision highp float;
 in float vType;
-in float vClass;
-in vec2 vCentroid;
+in vec2 vCenter;
+in vec2 vScreen;
 uniform float uTime;
 uniform float uScroll;
 uniform float uIsEdge;
 uniform float uMotion;
 out vec4 frag;
 
-vec3 hsv2rgb(vec3 c){
-  vec3 p = abs(fract(c.xxx + vec3(0.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0);
-  return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y);
+// Curated, moody gradient (deep violet -> magenta -> pink -> teal -> deep blue),
+// in the spirit of the real wall's hand-picked palettes. Loops seamlessly.
+vec3 palette(float x){
+  x = fract(x);
+  vec3 c0 = vec3(0.09, 0.02, 0.20);
+  vec3 c1 = vec3(0.66, 0.02, 0.46);
+  vec3 c2 = vec3(0.93, 0.28, 0.80);
+  vec3 c3 = vec3(0.02, 0.58, 0.58);
+  vec3 c4 = vec3(0.05, 0.07, 0.30);
+  vec3 cs[6] = vec3[6](c0, c1, c2, c3, c4, c0);
+  float s = x * 5.0;
+  int i = int(floor(s));
+  return mix(cs[i], cs[i + 1], s - float(i));
 }
-
-const float BPM = ${BPM.toFixed(1)};
 
 void main(){
   if (uIsEdge > 0.5){
-    // Thin, dark rhombus outlines for that stained-glass definition.
-    frag = vec4(0.015, 0.01, 0.03, 0.6);
+    // Thin, near-black rhombus outlines for that stained-glass definition.
+    frag = vec4(0.01, 0.006, 0.02, 0.5);
     return;
   }
 
-  float t = uTime;
-  float sc = uScroll * 0.0015;
+  vec2 s = vCenter;
+  float sc = uScroll * 0.0010;
 
-  // ---- beat clock -------------------------------------------------------
-  float bps = BPM / 60.0;
-  float bt = t * bps;
-  float phase = fract(bt);                 // position within the current beat
-  float beatIdx = floor(bt);
-  float accent = (mod(beatIdx, 4.0) < 0.5) ? 1.0 : 0.7; // downbeat hits hardest
-  float kick = exp(-phase * 9.0) * accent;              // sharp thump each beat
-  float hat = exp(-fract(bt * 2.0) * 16.0) * 0.35;      // off-beat shimmer
-  float energy = 0.5 + 0.5 * sin(bt * 3.14159265 / 16.0); // 32-beat build / drop
+  // The wall's "Ripple": concentric palette bands expanding from the centre,
+  // with a second offset source for organic interference. No beat, no strobe —
+  // a slow, hypnotic wave from the middle.
+  float RINGS = 5.0;   // ring density
+  float SPD   = 0.28;  // outward speed
+  float d1 = length(s);
+  float d2 = length(s - vec2(0.62, -0.34));
+  float field = (d1 * RINGS - uTime * SPD)
+              + 0.5 * (d2 * RINGS - uTime * SPD * 0.9);
 
-  // Radial shockwave rippling out from the centre on every kick (motion-gated).
-  float age = phase / bps;                 // seconds since the last beat
-  float d = length(vCentroid);
-  float ring = exp(-pow((d - age * 1.5) * 5.5, 2.0)) * exp(-phase * 2.5) * accent * uMotion;
+  // vType nudges the two rhombus kinds onto slightly different palette stops
+  // (echoing the wall's Pulse effect), giving the tiling its two-tone texture.
+  float x = field + vType * 0.06 + sc + uTime * 0.012;
+  vec3 col = palette(x);
 
-  // ---- hue: dances, and cycles faster as the energy builds --------------
-  float hue = vClass / 10.0;
-  hue += 0.07 * sin(t * 0.45 + dot(vCentroid, vec2(2.3, 1.7)) + sc);
-  hue += 0.05 * sin(t * 0.30 - vCentroid.x * 3.1 + sc * 1.7);
-  hue += t * (0.02 + 0.06 * energy);
-  hue += 0.05 * kick;
-  hue = fract(hue);
+  // Moody: a slow breath, plus a centre vignette so the headline sits on a
+  // calmer, darker bed.
+  float breath = 0.9 + 0.1 * sin(uTime * 0.4);
+  float vign = smoothstep(0.0, 1.1, length(vScreen));
+  col *= breath * mix(0.5, 1.0, vign);
 
-  // ---- brightness: moody floor, slammed on the beat ---------------------
-  float base = mix(0.07, 0.30, energy);
-  float val = base + 0.55 * kick + 0.6 * ring + hat;
-  val *= (vType > 0.5) ? 1.0 : 0.8;        // fat rhombi a touch brighter
-  val = clamp(val, 0.0, 1.0);
-  float sat = clamp(mix(0.7, 1.0, energy) - 0.25 * kick, 0.4, 1.0); // flash toward white on hits
-
-  vec3 col = hsv2rgb(vec3(hue, sat, val));
-  // White-hot core where a fresh shockwave meets the beat.
-  col += vec3(0.6, 0.55, 0.7) * kick * ring;
   frag = vec4(col, 1.0);
 }`;
 
@@ -292,7 +280,6 @@ export function PenroseScroll() {
     const loc = {
       aPos: gl.getAttribLocation(prog, "aPos"),
       aType: gl.getAttribLocation(prog, "aType"),
-      aClass: gl.getAttribLocation(prog, "aClass"),
       aCentroid: gl.getAttribLocation(prog, "aCentroid"),
       uTime: gl.getUniformLocation(prog, "uTime"),
       uScroll: gl.getUniformLocation(prog, "uScroll"),
@@ -315,7 +302,6 @@ export function PenroseScroll() {
     };
     const posBuf = mkBuf(g.pos);
     const typeBuf = mkBuf(g.type);
-    const clsBuf = mkBuf(g.cls);
     const centBuf = mkBuf(g.centroid);
     const edgeBuf = mkBuf(g.edgePos);
 
@@ -328,9 +314,6 @@ export function PenroseScroll() {
     gl.bindBuffer(gl.ARRAY_BUFFER, typeBuf);
     gl.enableVertexAttribArray(loc.aType);
     gl.vertexAttribPointer(loc.aType, 1, gl.FLOAT, false, 0, 0);
-    gl.bindBuffer(gl.ARRAY_BUFFER, clsBuf);
-    gl.enableVertexAttribArray(loc.aClass);
-    gl.vertexAttribPointer(loc.aClass, 1, gl.FLOAT, false, 0, 0);
     gl.bindBuffer(gl.ARRAY_BUFFER, centBuf);
     gl.enableVertexAttribArray(loc.aCentroid);
     gl.vertexAttribPointer(loc.aCentroid, 2, gl.FLOAT, false, 0, 0);
@@ -402,7 +385,6 @@ export function PenroseScroll() {
       window.removeEventListener("resize", onScroll);
       gl.deleteBuffer(posBuf);
       gl.deleteBuffer(typeBuf);
-      gl.deleteBuffer(clsBuf);
       gl.deleteBuffer(centBuf);
       gl.deleteBuffer(edgeBuf);
       gl.deleteVertexArray(fillVAO);
