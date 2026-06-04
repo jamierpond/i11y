@@ -183,6 +183,22 @@ void main(){
   vType = aType;
 }`;
 
+// Star Nest by Pablo Roman Andrioli (MIT). Volumetric deep-space galaxy.
+// Tuned down (fewer steps/iterations) so it stays cheap enough for phones, and
+// driven slowly off uTime — no mouse. Returns an opaque, vibey starfield.
+// (Steps/iterations are the main perf knobs — lower for phones, raise for depth.)
+const SN_ITER = 14;
+const SN_VOLSTEPS = 14;
+const SN_FORMUPARAM = 0.53;
+const SN_STEPSIZE = 0.1;
+const SN_ZOOM = 0.8;
+const SN_TILE = 0.85;
+const SN_SPEED = 0.006;
+const SN_BRIGHTNESS = 0.0015;
+const SN_DARKMATTER = 0.3;
+const SN_DISTFADING = 0.73;
+const SN_SATURATION = 0.85;
+
 const FRAG = `#version 300 es
 precision highp float;
 in float vType;
@@ -192,6 +208,7 @@ uniform float uTime;
 uniform float uScroll;
 uniform float uIsEdge;
 uniform float uMotion;
+uniform vec2 uResolution;
 out vec4 frag;
 
 // Curated, moody gradient (deep violet -> magenta -> pink -> teal -> deep blue),
@@ -209,36 +226,88 @@ vec3 palette(float x){
   return mix(cs[i], cs[i + 1], s - float(i));
 }
 
+// Star Nest volumetric galaxy.
+vec3 starNest(vec2 uv){
+  vec3 dir = vec3(uv * ${SN_ZOOM}, 1.0);
+  float time = uTime * ${SN_SPEED} + 0.25;
+
+  // Slow autonomous rotation (replaces the original mouse control).
+  float a1 = 0.5 + 0.18 * sin(uTime * 0.018);
+  float a2 = 0.8 + 0.18 * cos(uTime * 0.013);
+  mat2 rot1 = mat2(cos(a1), sin(a1), -sin(a1), cos(a1));
+  mat2 rot2 = mat2(cos(a2), sin(a2), -sin(a2), cos(a2));
+  dir.xz *= rot1; dir.xy *= rot2;
+  vec3 from = vec3(1.0, 0.5, 0.5);
+  from += vec3(time * 2.0, time, -2.0);
+  from.xz *= rot1; from.xy *= rot2;
+
+  float s = 0.1, fade = 1.0;
+  vec3 v = vec3(0.0);
+  for (int r = 0; r < ${SN_VOLSTEPS}; r++) {
+    vec3 p = from + s * dir * 0.5;
+    p = abs(vec3(${SN_TILE}) - mod(p, vec3(${SN_TILE} * 2.0))); // tiling fold
+    float pa, a = pa = 0.0;
+    for (int i = 0; i < ${SN_ITER}; i++) {
+      p = abs(p) / dot(p, p) - ${SN_FORMUPARAM}; // the magic formula
+      a += abs(length(p) - pa);
+      pa = length(p);
+    }
+    float dm = max(0.0, ${SN_DARKMATTER} - a * a * 0.001);
+    a *= a * a;
+    if (r > 6) fade *= 1.0 - dm;
+    v += fade;
+    v += vec3(s, s * s, s * s * s * s) * a * ${SN_BRIGHTNESS} * fade;
+    fade *= ${SN_DISTFADING};
+    s += ${SN_STEPSIZE};
+  }
+  v = mix(vec3(length(v)), v, ${SN_SATURATION});
+  return v * 0.01;
+}
+
 void main(){
   if (uIsEdge > 0.5){
-    // Thin, near-black rhombus outlines for that stained-glass definition.
-    frag = vec4(0.01, 0.006, 0.02, 0.5);
+    // Thin dark rhombus outlines — the lattice over the galaxy.
+    frag = vec4(0.0, 0.0, 0.0, 0.32);
     return;
   }
 
-  vec2 s = vCenter;
+  // --- deep-space galaxy, in stable screen space (its own slow drift) ---
+  vec2 g = gl_FragCoord.xy / uResolution - 0.5;
+  g.y *= uResolution.y / uResolution.x;
+  vec3 galaxy = starNest(g);
+
+  // --- Penrose tint: the wall's slow "Ripple" wave from the centre ---
+  vec2 sp = vCenter;
   float sc = uScroll * 0.0010;
+  float RINGS = 5.0;
+  float SPD = 0.20;
+  float d1 = length(sp);
+  float d2 = length(sp - vec2(0.62, -0.34));
+  float field = (d1 * RINGS - uTime * SPD) + 0.5 * (d2 * RINGS - uTime * SPD * 0.9);
+  float x = field + vType * 0.06 + sc + uTime * 0.010;
+  vec3 tint = palette(x);
 
-  // The wall's "Ripple": concentric palette bands expanding from the centre,
-  // with a second offset source for organic interference. No beat, no strobe —
-  // a slow, hypnotic wave from the middle.
-  float RINGS = 5.0;   // ring density
-  float SPD   = 0.28;  // outward speed
-  float d1 = length(s);
-  float d2 = length(s - vec2(0.62, -0.34));
-  float field = (d1 * RINGS - uTime * SPD)
-              + 0.5 * (d2 * RINGS - uTime * SPD * 0.9);
+  // Moody Penrose base: the tiling is the star of the show — keep it the clear
+  // coloured structure.
+  vec3 base = tint * (0.30 + 0.06 * sin(uTime * 0.4));
+  base *= (vType > 0.5) ? 1.0 : 0.82;
 
-  // vType nudges the two rhombus kinds onto slightly different palette stops
-  // (echoing the wall's Pulse effect), giving the tiling its two-tone texture.
-  float x = field + vType * 0.06 + sc + uTime * 0.012;
-  vec3 col = palette(x);
+  // Crisp stars: gamma > 1 keeps the points sharp; dimmed and capped so the
+  // bright cores never blow out the lattice or the headline.
+  vec3 stars = pow(clamp(galaxy, 0.0, 1.0), vec3(1.5)) * 0.75;
+  stars = min(stars, vec3(0.55));
 
-  // Moody: a slow breath, plus a centre vignette so the headline sits on a
-  // calmer, darker bed.
-  float breath = 0.9 + 0.1 * sin(uTime * 0.4);
-  float vign = smoothstep(0.0, 1.1, length(vScreen));
-  col *= breath * mix(0.5, 1.0, vign);
+  // Dusty playa haze: a warm, low-exponent glow (exponent < 1 spreads it into
+  // the dim regions) tinted amber/tan for that Burning Man dust-in-the-air feel.
+  float lum = clamp(length(galaxy) * 0.62, 0.0, 1.0);
+  vec3 dust = vec3(0.17, 0.12, 0.08) * pow(lum, 0.7);
+
+  // Screen-blend stars + dust over the tiling.
+  vec3 col = 1.0 - (1.0 - base) * (1.0 - (stars + dust));
+
+  // Gentle centre vignette for headline legibility.
+  float vign = smoothstep(0.0, 1.15, length(vScreen));
+  col *= mix(0.65, 1.0, vign);
 
   frag = vec4(col, 1.0);
 }`;
@@ -286,6 +355,7 @@ export function PenroseScroll() {
       uAspect: gl.getUniformLocation(prog, "uAspect"),
       uIsEdge: gl.getUniformLocation(prog, "uIsEdge"),
       uMotion: gl.getUniformLocation(prog, "uMotion"),
+      uResolution: gl.getUniformLocation(prog, "uResolution"),
     };
 
     // Reduced motion only damps the geometric motion (spin/zoom/shockwave);
@@ -328,7 +398,7 @@ export function PenroseScroll() {
 
     // --- sizing ---
     const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       const w = Math.floor(canvas.clientWidth * dpr);
       const h = Math.floor(canvas.clientHeight * dpr);
       if (canvas.width !== w || canvas.height !== h) {
@@ -353,6 +423,7 @@ export function PenroseScroll() {
       gl.uniform1f(loc.uScroll, scrollRef.current);
       gl.uniform1f(loc.uAspect, canvas.width / canvas.height);
       gl.uniform1f(loc.uMotion, motion);
+      gl.uniform2f(loc.uResolution, canvas.width, canvas.height);
 
       gl.uniform1f(loc.uIsEdge, 0);
       gl.bindVertexArray(fillVAO);
