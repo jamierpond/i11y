@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "hero-photos": "node scripts/hero-photos.mjs"
   },
   "dependencies": {
     "framer-motion": "^12.23.12",
@@ -23,6 +24,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
+    "sharp": "0.34.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
